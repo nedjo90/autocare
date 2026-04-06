@@ -1,20 +1,29 @@
 ---
 import Layout from '../layouts/Layout.astro'
+import { getSiteSettings, getServices, getHoraires, imageUrl, DIRECTUS_URL, DIRECTUS_TOKEN } from '../lib/directus'
 
-const services = [
-  { nom: 'Vidange', description: 'Vidange huile moteur + filtre', duree: 45, prix: 89 },
-  { nom: 'Freinage', description: 'Remplacement plaquettes de frein', duree: 90, prix: 150 },
-  { nom: 'Pneus', description: 'Montage et equilibrage 4 pneus', duree: 60, prix: 60 },
-  { nom: 'Diagnostic', description: 'Lecture codes erreur + diagnostic complet', duree: 30, prix: 45 },
-  { nom: 'Revision complete', description: 'Revision annuelle tous points de controle', duree: 120, prix: 250 },
-]
+const settings = await getSiteSettings()
+const services = await getServices()
+const horaires = await getHoraires()
+
+const siteName = settings?.nom_garage || 'AutoCare'
+const heroTitle = settings?.hero_titre || 'Votre voiture entre de bonnes mains'
+const heroDesc = settings?.hero_description || 'Entretien, reparation et diagnostic automobile.'
+const adresse = settings?.adresse || ''
+const telephone = settings?.telephone || ''
+const logoSrc = imageUrl(settings?.logo)
+const heroImgSrc = imageUrl(settings?.hero_image)
 ---
 
-<Layout title="AutoCare - Entretien Auto">
+<Layout title={`${siteName} - Entretien Auto`}>
 
   <header class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="text-xl font-bold text-blue-600">AutoCare</div>
+      {logoSrc ? (
+        <img src={logoSrc} alt={siteName} class="h-10" />
+      ) : (
+        <div class="text-xl font-bold text-blue-600">{siteName}</div>
+      )}
       <nav class="hidden md:flex gap-6 text-sm text-gray-600">
         <a href="#services" class="hover:text-blue-600">Services</a>
         <a href="#pourquoi" class="hover:text-blue-600">Pourquoi nous</a>
@@ -26,12 +35,13 @@ const services = [
     </div>
   </header>
 
-  <section class="bg-gradient-to-br from-blue-600 to-blue-800 text-white px-4 py-16 md:py-24">
-    <div class="max-w-5xl mx-auto text-center">
-      <h1 class="text-3xl md:text-5xl font-bold mb-4">Votre voiture entre de bonnes mains</h1>
-      <p class="text-blue-100 text-lg md:text-xl mb-8 max-w-2xl mx-auto">
-        Entretien, reparation et diagnostic automobile. Prise de rendez-vous en ligne, rapide et simple.
-      </p>
+  <section class="relative bg-gradient-to-br from-blue-600 to-blue-800 text-white px-4 py-16 md:py-24 overflow-hidden">
+    {heroImgSrc && (
+      <img src={heroImgSrc} alt="" class="absolute inset-0 w-full h-full object-cover opacity-20" />
+    )}
+    <div class="max-w-5xl mx-auto text-center relative z-10">
+      <h1 class="text-3xl md:text-5xl font-bold mb-4">{heroTitle}</h1>
+      <p class="text-blue-100 text-lg md:text-xl mb-8 max-w-2xl mx-auto">{heroDesc}</p>
       <a href="#rdv" class="inline-block bg-white text-blue-700 font-semibold px-8 py-3 rounded-full hover:bg-blue-50 transition text-lg">
         Reserver un creneau
       </a>
@@ -42,14 +52,19 @@ const services = [
     <div class="max-w-5xl mx-auto">
       <h2 class="text-2xl md:text-3xl font-bold text-center mb-10">Nos services</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {services.map((s) => (
-          <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition">
-            <div class="flex justify-between items-start mb-3">
-              <h3 class="font-semibold text-lg">{s.nom}</h3>
-              <span class="text-blue-600 font-bold whitespace-nowrap">{s.prix}&euro;</span>
+        {services.map((s: any) => (
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+            {s.image && (
+              <img src={imageUrl(s.image)} alt={s.nom} class="w-full h-40 object-cover" />
+            )}
+            <div class="p-6">
+              <div class="flex justify-between items-start mb-3">
+                <h3 class="font-semibold text-lg">{s.nom}</h3>
+                <span class="text-blue-600 font-bold whitespace-nowrap">{s.prix}&euro;</span>
+              </div>
+              <p class="text-sm text-gray-500 mb-2">{s.description}</p>
+              <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">{s.duree_minutes} min</span>
             </div>
-            <p class="text-sm text-gray-500 mb-2">{s.description}</p>
-            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">{s.duree} min</span>
           </div>
         ))}
       </div>
@@ -58,7 +73,7 @@ const services = [
 
   <section class="bg-white px-4 py-16" id="pourquoi">
     <div class="max-w-5xl mx-auto text-center">
-      <h2 class="text-2xl md:text-3xl font-bold mb-10">Pourquoi AutoCare ?</h2>
+      <h2 class="text-2xl md:text-3xl font-bold mb-10">Pourquoi {siteName} ?</h2>
       <div class="grid md:grid-cols-3 gap-8">
         <div>
           <div class="text-3xl font-bold text-blue-600 mb-3">15+</div>
@@ -84,17 +99,20 @@ const services = [
       <h2 class="text-2xl md:text-3xl font-bold mb-4">Prendre rendez-vous</h2>
       <p class="text-gray-600 mb-8">Choisissez un service, une date et un creneau. Confirmation immediate.</p>
       <div class="bg-white rounded-2xl p-8 shadow-sm">
-        <p class="text-gray-400 italic">Booking connecte a Directus — bientot disponible</p>
+        <p class="text-gray-400 italic mb-4">Systeme de booking — bientot connecte</p>
+        <a href="https://adventurous-determination-production.up.railway.app" target="_blank" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition">
+          Acceder au back-office Directus
+        </a>
       </div>
     </div>
   </section>
 
   <footer class="bg-gray-900 text-gray-400 px-4 py-10">
     <div class="max-w-5xl mx-auto text-center text-sm">
-      <div class="text-white font-bold text-lg mb-2">AutoCare</div>
-      <p>12 Rue de la Mecanique, 75011 Paris</p>
-      <p class="mt-1">01 23 45 67 89</p>
-      <p class="mt-4 text-gray-600">AutoCare 2026. Tous droits reserves.</p>
+      <div class="text-white font-bold text-lg mb-2">{siteName}</div>
+      {adresse && <p>{adresse}</p>}
+      {telephone && <p class="mt-1">{telephone}</p>}
+      <p class="mt-4 text-gray-600">{siteName} 2026. Tous droits reserves.</p>
     </div>
   </footer>
 
