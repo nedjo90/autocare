@@ -5,6 +5,7 @@ async function fetchDirectus(path: string) {
   try {
     const res = await fetch(`${DIRECTUS_URL}${path}`, {
       headers: { Authorization: `Bearer ${DIRECTUS_TOKEN}` },
+      cache: 'no-store',
     })
     const json = await res.json()
     return json.data || []
